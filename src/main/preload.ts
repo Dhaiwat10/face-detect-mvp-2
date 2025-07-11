@@ -21,6 +21,16 @@ const electronHandler = {
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
+    /**
+     * Invokes the 'process-images' channel in the main process.
+     * @param paths An array of file paths of the images to process.
+     * @returns A promise that resolves with the processing result.
+     */
+    processImages: (paths: string[]): Promise<any> => {
+      return ipcRenderer.invoke('process-images', paths);
+    },
+    openFileDialog: (): Promise<string[]> =>
+      ipcRenderer.invoke('dialog:open-file'),
   },
 };
 

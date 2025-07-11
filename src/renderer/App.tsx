@@ -1,50 +1,66 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
-import './App.css';
+import React, { useState } from 'react';
 
-function Hello() {
+function App() {
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
+  const [jsonResponse, setJsonResponse] = useState<string>('');
+  const [processing, setProcessing] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>(
+    'Select images and click "Process" to see the result.',
+  );
+
+  const handleSelectClick = async () => {
+    const paths = await window.electron.ipcRenderer.openFileDialog();
+    setSelectedPaths(paths);
+    setJsonResponse(''); // Clear previous results
+    if (paths && paths.length > 0) {
+      setMessage(`${paths.length} file(s) selected.`);
+    } else {
+      setMessage('Select images and click "Process" to see the result.');
+    }
+  };
+
+  const handleProcessClick = async () => {
+    if (selectedPaths.length > 0) {
+      setProcessing(true);
+      setMessage('Processing...');
+
+      const response =
+        await window.electron.ipcRenderer.processImages(selectedPaths);
+
+      // Display the JSON response prettily
+      setJsonResponse(JSON.stringify(response, null, 2));
+
+      if (response.success) {
+        setMessage('Processing complete!');
+      } else {
+        setMessage(`An error occurred: ${response.error}`);
+      }
+      setProcessing(false);
+    } else {
+      setMessage('Please select one or more image files first.');
+    }
+  };
+
   return (
     <div>
-      <div className="Hello">
-        <img width="200" alt="icon" src={icon} />
-      </div>
-      <h1>electron-react-boilerplate</h1>
-      <div className="Hello">
-        <a
-          href="https://electron-react-boilerplate.js.org/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              📚
-            </span>
-            Read our docs
-          </button>
-        </a>
-        <a
-          href="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="folded hands">
-              🙏
-            </span>
-            Donate
-          </button>
-        </a>
-      </div>
+      <h1>Electron Image Processor</h1>
+      <p>{message}</p>
+
+      <button type="button" onClick={handleSelectClick}>
+        Select Images
+      </button>
+
+      <button
+        type="button"
+        onClick={handleProcessClick}
+        disabled={processing || selectedPaths.length === 0}
+      >
+        {processing ? 'Processing...' : 'Process Images'}
+      </button>
+
+      {jsonResponse && <pre>{jsonResponse}</pre>}
     </div>
   );
 }
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Hello />} />
-      </Routes>
-    </Router>
-  );
-}
+export default App;

@@ -9,9 +9,10 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import fs from 'fs';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -24,6 +25,41 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+
+// IPC handler for processing images
+ipcMain.handle('process-images', async (event, paths: string[]) => {
+  console.log(`Main process received image paths:`, paths);
+
+  // This is where your backend processing happens.
+  // For this example, we'll get the file size and name.
+  try {
+    const results = paths.map((filePath) => {
+      const stats = fs.statSync(filePath);
+      return {
+        fileName: path.basename(filePath),
+        sizeInBytes: stats.size,
+        path: filePath,
+      };
+    });
+
+    // Send the JSON response back to the renderer
+    return { success: true, data: results };
+  } catch (error) {
+    console.error('Failed to process images:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+ipcMain.handle('dialog:open-file', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif'] }],
+  });
+  if (canceled) {
+    return [];
+  }
+  return filePaths;
+});
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
