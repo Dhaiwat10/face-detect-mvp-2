@@ -203,22 +203,20 @@
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false
     },
+    "afterPack": "./.erb/scripts/fix-canvas.js",
     "extraFiles": [
       {
-        "from": "/opt/homebrew/lib/libcairo.2.dylib",
-        "to": "libcairo.2.dylib"
-      },
-      {
-        "from": "/opt/homebrew/lib/libpixman-1.0.dylib",
-        "to": "libpixman-1.0.dylib"
-      },
-      {
-        "from": "/opt/homebrew/lib/libfontconfig.1.dylib",
-        "to": "libfontconfig.1.dylib"
-      },
-      {
-        "from": "/opt/homebrew/lib/libfreetype.6.dylib",
-        "to": "libfreetype.6.dylib"
+        "from": "/opt/homebrew/lib",
+        "to": "Frameworks",
+        "filter": [
+          "libcairo.2.dylib",
+          "libpixman-1.0.dylib",
+          "libfontconfig.1.dylib",
+          "libfreetype.6.dylib",
+          "libpng16.16.dylib",
+          "libbrotlidec.1.dylib",
+          "libbrotlicommon.1.dylib"
+        ]
       }
     ],
     "dmg": {
