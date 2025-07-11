@@ -29,6 +29,8 @@ const electronHandler = {
     processImages: (paths: string[]): Promise<any> => {
       return ipcRenderer.invoke('process-images', paths);
     },
+    getAllIndexedFaces: (): Promise<{ id: number; descriptor: string }[]> =>
+      ipcRenderer.invoke('get-all-indexed-faces'),
     openFileDialog: (): Promise<string[]> =>
       ipcRenderer.invoke('dialog:open-file'),
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function App() {
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
@@ -7,6 +7,17 @@ function App() {
   const [message, setMessage] = useState<string>(
     'Select images and click "Process" to see the result.',
   );
+  const [knownFaces, setKnownFaces] = useState<
+    {
+      id: number;
+      descriptor: string;
+    }[]
+  >([]);
+
+  const fetchKnownFaces = async () => {
+    const faces = await window.electron.ipcRenderer.getAllIndexedFaces();
+    setKnownFaces(faces);
+  };
 
   const handleSelectClick = async () => {
     const paths = await window.electron.ipcRenderer.openFileDialog();
@@ -36,10 +47,15 @@ function App() {
         setMessage(`An error occurred: ${response.error}`);
       }
       setProcessing(false);
+      await fetchKnownFaces();
     } else {
       setMessage('Please select one or more image files first.');
     }
   };
+
+  useEffect(() => {
+    fetchKnownFaces();
+  }, []);
 
   return (
     <div>
@@ -59,6 +75,13 @@ function App() {
       </button>
 
       {jsonResponse && <pre>{jsonResponse}</pre>}
+
+      <h2>Known Faces</h2>
+      <ul>
+        {knownFaces.map((face) => (
+          <li key={face.id}>{face.id}</li>
+        ))}
+      </ul>
     </div>
   );
 }

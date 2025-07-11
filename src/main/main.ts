@@ -12,9 +12,15 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import fs from 'fs';
+import * as canvas from 'canvas';
+import * as faceapi from '@vladmandic/face-api/dist/face-api.node.js';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { getAllIndexedFaces, processImages, resolveHtmlPath } from './util';
+import { initializeDatabase, setupDatabase } from './database';
+
+// Monkey patch the environment
+const { Canvas, Image, ImageData } = canvas as any;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 class AppUpdater {
   constructor() {
@@ -33,14 +39,10 @@ ipcMain.handle('process-images', async (event, paths: string[]) => {
   // This is where your backend processing happens.
   // For this example, we'll get the file size and name.
   try {
-    const results = paths.map((filePath) => {
-      const stats = fs.statSync(filePath);
-      return {
-        fileName: path.basename(filePath),
-        sizeInBytes: stats.size,
-        path: filePath,
-      };
-    });
+    if (!mainWindow) {
+      throw new Error('MainWindow is not defined');
+    }
+    const results = await processImages(mainWindow, paths);
 
     // Send the JSON response back to the renderer
     return { success: true, data: results };
@@ -59,6 +61,10 @@ ipcMain.handle('dialog:open-file', async () => {
     return [];
   }
   return filePaths;
+});
+
+ipcMain.handle('get-all-indexed-faces', async () => {
+  return getAllIndexedFaces();
 });
 
 ipcMain.on('ipc-example', async (event, arg) => {
@@ -160,9 +166,23 @@ app.on('window-all-closed', () => {
   }
 });
 
+const isDev = !app.isPackaged;
+
 app
   .whenReady()
-  .then(() => {
+  .then(async () => {
+    const userDataPath = app.getPath('userData');
+    const db = initializeDatabase(userDataPath);
+    setupDatabase(db); // Note: This clears the DB on every start. Consider changing this behavior.
+
+    const modelsPath = isDev
+      ? path.join(__dirname, '../models')
+      : path.join(__dirname, 'models');
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath);
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(modelsPath);
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(modelsPath);
+    console.log('Models loaded.');
+
     createWindow();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
