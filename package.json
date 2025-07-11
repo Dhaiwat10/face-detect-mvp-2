@@ -203,6 +203,24 @@
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false
     },
+    "extraFiles": [
+      {
+        "from": "/opt/homebrew/lib/libcairo.2.dylib",
+        "to": "libcairo.2.dylib"
+      },
+      {
+        "from": "/opt/homebrew/lib/libpixman-1.0.dylib",
+        "to": "libpixman-1.0.dylib"
+      },
+      {
+        "from": "/opt/homebrew/lib/libfontconfig.1.dylib",
+        "to": "libfontconfig.1.dylib"
+      },
+      {
+        "from": "/opt/homebrew/lib/libfreetype.6.dylib",
+        "to": "libfreetype.6.dylib"
+      }
+    ],
     "dmg": {
       "contents": [
         {
